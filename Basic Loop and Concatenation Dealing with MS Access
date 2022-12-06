@@ -1,0 +1,67 @@
+'@Authtor: Athit Vue
+'@Date: 12/02/2022
+'@Brief: This function will iterate thru the records each col at a time. Once it
+' finds the columns of interest, it sets the variable. Here the url is split into 4
+' sections as LF Workflow cannot pass the string above 255 characters in. Thus,
+' once we have the instance ID, we will concatenate all url segments together and
+' set the "LINK" column accordingly. This should be, ideally, called when the user
+' opens this MS Access file.
+
+Public Function ConcatenateUrl()
+    Dim db As DAO.Database, rstIn As DAO.Recordset ', rstOut As DAO.Recordset
+    
+    Set db = CurrentDb()
+    Set rstIn = db.OpenRecordset("dbo_LF_Onboarding", dbOpenDynaset, dbEditAdd)
+    Set rstOut = db.OpenRecordset("dbo_LF_Onboarding", dbOpenDynaset, dbEditAdd)
+    
+    Dim haystack1 As String
+    Dim haystack2 As String
+    Dim haystack3 As String
+    Dim instanceID As String
+    Dim link As String
+    Dim linkColIndex As Integer
+    
+    'must force complete retrieval first before record count
+    'rst.MoveLast
+    
+    'MsgBox ("Rows: " & rst.RecordCount)
+    
+    'loop thru each column for each record and concatenate the url
+    With rstIn
+        .MoveFirst
+        Do
+            For i = 0 To .Fields.Count - 1
+                If InStr(.Fields(i).Name, "Instance ID") Then
+                    instanceID = .Fields(i)
+                ElseIf InStr(.Fields(i).Name, "Haystack1") Then
+                    haystack1 = .Fields(i)
+                ElseIf InStr(.Fields(i).Name, "Haystack2") Then
+                    haystack2 = .Fields(i)
+                ElseIf InStr(.Fields(i).Name, "Haystack3") Then
+                    haystack3 = .Fields(i)
+                ElseIf InStr(.Fields(i).Name, "Link To LF Monitor Tab") Then
+                    linkColIndex = i
+                End If
+            Next i
+            
+            'concatenate the url
+            'link = haystack1 & instanceID & haystack2 & haystack3
+            link = haystack1 & haystack2 & haystack3
+            'MsgBox ("Link: " & link)
+            
+            .Edit
+            .Fields(linkColIndex) = link
+            .Update
+            
+            'set the concatenated url to the link column
+            'rstOut.Edit
+            'rstOut.Fields(linkColIndex) = link
+            'rstOut.Update
+            
+            .MoveNext
+        Loop Until .EOF
+    End With
+    rstIn.Close
+    'rstOut.Close
+    db.Close
+End Function
